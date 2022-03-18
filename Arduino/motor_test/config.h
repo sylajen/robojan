@@ -3,17 +3,6 @@
  */
 
 // HARDWARE
-/*
-#define PWM_CHANNEL_1 2  // NO IDEA ON HOVEBOT
-#define PWM_CHANNEL_2 3  // THROTTLING ON HOVERBOT
-#define PWM_CHANNEL_3 19 // STEERING ON HOVERBOT
-*/
-
-#define pin2 2 //MOTORLEFT
-#define pin3 3 //MOTORLEFT
-#define pin4 4 //MOTORRIGHT
-#define pin5 5 //MOTORRIGHT
- 
 
 #define MOTORDIR_L -1 // PIN1 AND PIN2
 #define MOTORDIR_R 1  // PIN3 AND PIN4
