@@ -6,14 +6,14 @@
 // note, Pin 11 is fried on the ODrive
 
 //LEFT MOTOR
-int motor1pin1 = 7; // N1 on LEFT motor controller
-int motor1pin2 = 8; // N2 on LEFT motor controller 
-int ENAleft = 9; // PWM for LEFT motor
+int motor1pin1 = 4; // N1 on LEFT motor controller
+int motor1pin2 = 3; // N2 on LEFT motor controller 
+int ENAleft = 2; // PWM for LEFT motor
 
 //RIGHT MOTOR
 int motor2pin1 = 5; // N1 on RIGHT motor controller
 int motor2pin2 = 6; // N2 on RIGHT motor controller
-int ENAright = 4; // PWM for RIGHT motor
+int ENAright = 7; // PWM for RIGHT motor
 
 //Counter for motor test
 int counter = 1;
@@ -25,7 +25,7 @@ void setup() {
 
 void loop() {
     /** *LEFT MOTOR TEST***/
-    analogWrite(ENAleft, 200);
+    analogWrite(ENAleft, 100);
     LeftMotorForward(); // We turn to direction 1 for 3s then stop for 2s
     delay(3000);
     LeftMotorBrake();
@@ -36,7 +36,7 @@ void loop() {
     delay(5000);
 
     /***RIGHT MOTOR TEST***/
-    analogWrite(ENAright, 200);
+    analogWrite(ENAright, 100);
     RightMotorForward(); // We turn to direction 1 for 3s then stop for 2s
     delay(3000);
     RightMotorBrake();
