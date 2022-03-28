@@ -26,15 +26,15 @@ void setup() {
 
 void loop() {
   thrVal = Serial2.read();
-  if (thrVal > 0){
+  while (thrVal > 0){
     LeftMotorForward();
     RightMotorForward();
   }
-  else if (thrVal < 0){
+  while (thrVal < 0){
     LeftMotorBackward();
     RightMotorBackward();
   }
-  else{
+  while (thrVal == 0){
     LeftMotorOff();
     RightMotorOff();
   }
