@@ -1,4 +1,4 @@
-# ROBOJAN
+![Robojan Logo](https://github.com/sylajen/robojan/blob/[images]/robojan.png?raw=true)
  A 2 wheeled self-balancing robot for use in medical fields, such as providing deliveries from the pharmacy throughout the hospital.
 
 OBJECTIVE
