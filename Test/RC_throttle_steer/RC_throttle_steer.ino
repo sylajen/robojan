@@ -1,35 +1,26 @@
-//#include "config.h"
-//#include "Metro.h"
-//#include "PID_v1"
-// int motorState = 0; //0 for off, 1 for on
+#include "config.h"
 
-//RECEIVER INITIALIZATION
-const int chA = 5; //channel 1 pin
-const int chB = 6; //channel 2 pin
-int ch1; //throttle (900 - 2000 VALUE)
-int ch2; //steer (900 - 2000 VALUE)
-int strPWM = 0; //0-255 VALUE
-int thrPWM = 0; //0-255 VALUE
-
-//LEFT MOTOR
-int motor1pin1 = 12; // N1 on LEFT motor controller
-int motor1pin2 = 13; // N2 on LEFT motor controller
-int ENAleft = 11; // PWM for LEFT motor
-
-//RIGHT MOTOR
-int motor2pin1 = 7; // N1 on RIGHT motor controller
-int motor2pin2 = 8; // N2 on RIGHT motor controller
-int ENAright = 9; // PWM for RIGHT motor
+void control(int thr, int str){
+  //if the contoller is off, motors are off
+  if (thr == 0){
+    leftMotorOff();
+    rightMotorOff();
+  }
+  else {
+    throttle(thr);
+    steering(str);
+  }
+}
 
 //throttling and steering
 void throttle(int thr) {
-  if (thr > 1550) {
-    thrPWM = map(thr, 1550, 2100, 50, 255);
+  if (thr > thrMinForward) {
+    thrPWM = map(thr, thrMinForward, thrMaxForward, minPWM, maxPWM);
     leftMotorForward(thrPWM);
     rightMotorForward(thrPWM);
   }
-  else if (thr < 1350) {
-    thrPWM = map(thr, 1350, 850, 50, 255);
+  else if (thr < thrMinBackward) {
+    thrPWM = map(thr, thrMinBackward, thrMaxBackward, minPWM, maxPWM); //ch1, 1350, 850, 75, 255
     leftMotorBackward(thrPWM);
     rightMotorBackward(thrPWM);
   }
@@ -40,12 +31,12 @@ void throttle(int thr) {
 }
 
 void steering(int str) {
-  if (str > 1550) {
-    strPWM = map(str, 1550, 2000, 50, 255);
+  if (str > strMinLeft) {
+    strPWM = map(str, strMinLeft, strMaxLeft, minPWM, maxPWM);
     turnLeft(strPWM);
   }
-  else if (str < 1350) {
-    strPWM = map(str, 1350, 900, 50, 255);
+  else if (str < strMinRight) {
+    strPWM = map(str, strMinRight, strMaxRight, minPWM, maxPWM);
     turnRight(strPWM);
   }
   else {
@@ -114,16 +105,16 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  ch1 = pulseIn(chA, HIGH, 25000); //throttling
-  Serial.print("ch1:"); //Prints channel readings on Serial Monitor
+  ch1 = pulseIn(chA, HIGH, 25000); //steer
+  Serial.print("| ch1:"); //Prints channel readings on Serial Monitor
   Serial.print(ch1);
   Serial.print("  |  ");
 
-  ch2 = pulseIn(chB, HIGH, 25000); //steering
+  ch2 = pulseIn(chB, HIGH, 25000); //throttle
   Serial.print("ch2:"); //Prints channel readings on Serial Monitor
   Serial.print(ch2);
+  Serial.print(" |");
   Serial.println();
 
-  throttle(ch1);
-  steering(ch2);
+  control(ch1, ch2);
 }
