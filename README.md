@@ -1,4 +1,4 @@
-![Robojan](https://github.com/sylajen/robojan/blob/images/robojan.png?raw=true)
+![Robojan](robojan.png)
 
 
 Self-Balancing Robot
