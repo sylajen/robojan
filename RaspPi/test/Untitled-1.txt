@@ -1,0 +1,42 @@
+/*
+  Speed Controller by G. Souris @2017
+ */
+int chnthr; //the name of the variable term for throttle channel's input signal
+int voltmotor; //the name of the variable term for voltage out to the power transistor which drives the motor
+
+void setup() {
+  pinMode(5, INPUT); //pin no. 5 to read the signal from receiver
+  pinMode(3, OUTPUT); //pin no. 3 to drive the motor
+  pinMode(6, OUTPUT); //pin 1 of latched relay coil No. 1 
+  pinMode(9, OUTPUT); //pin 8 of latched relay coil No. 1
+  pinMode(10, OUTPUT); //pin 1 of latched relay coil No. 2
+  pinMode(11, OUTPUT); //pin 8 of latched relay coil No. 2
+  analogWrite(6, 0); //pulse to pin 1 of latched relay coil No. 1
+  analogWrite(9, 0); //pulse to pin 8 of latched relay coil No. 1
+  analogWrite(10, 0); //pulse to pin 1 of latched relay coil No. 2
+  analogWrite(11, 0); //pulse to pin 8 of latched relay coil No. 2
+}
+
+void loop() {
+  chnthr = pulseIn(5, HIGH, 25000); //this reads the duration of the reciver's signal in ms
+
+if(chnthr <1200 and chnthr> 800) //throttle is in forward motion
+  {
+  analogWrite(6, 250);  delay(30); analogWrite(6, 0); //pulse to open the relay No. 1 for forward motion
+  analogWrite(10, 250);  delay(30); analogWrite(10, 0); //pulse to open the relay No. 2 for forward motion
+  voltmotor=map(chnthr, 1200, 800, 0, 255); //this scales the receiver's signal from ms to 0-5V
+  analogWrite(3,voltmotor);} //sends voltage to the power transistor to drive the motor
+  
+  else if(chnthr >1300 and chnthr< 1700) //throttle is in reverse motion
+  {
+  analogWrite(9, 250);  delay(30); analogWrite(9, 0);  //pulse to open the relay No. 1 for reverse motion
+  analogWrite(11, 250);  delay(30); analogWrite(11, 0); //pulse to open the relay No. 2 for reverse motion
+  voltmotor=map(chnthr, 1300, 1700, 0, 255); //this scales the receiver's signal from ms to 0-5V
+  analogWrite(3,voltmotor);} //sends voltage to the power transistor to drive the motor
+  
+  else  //throttle is idle
+  {voltmotor=0;
+  analogWrite(3,voltmotor);} //sends no voltage to the power transistor
+
+  delay(1); //Break of 1 ms until the next reading of signal
+}
