@@ -1,156 +1,125 @@
-#include "config.h"
-#include "I2Cdev.h"
-#include "PID_v2.h"
-#include "MPU6050.h"
 #include <Wire.h>
+#include "config.h"
 
-//balancing
-void Compute(float Pitch, float Roll, float Yaw) {
-   /*How long since we last calculated*/
-   unsigned long now = millis();
-   double timeChange = (double)(now - lastTime);
-  
-   /*Compute all the working error variables*/
-   double error = Setpoint - Input;
-   errSum += (error * timeChange);
-   double dErr = (error - lastErr) / timeChange;
-  
-   /*Compute PID Output*/
-   Output = kp * error + ki * errSum + kd * dErr;
-  
-   /*Remember some variables for next time*/
-   lastErr = error;
-   lastTime = now;
-}
-
-void SetTunings(double Kp, double Ki, double Kd)
+void setup() 
 {
-   kp = Kp;
-   ki = Ki;
-   kd = Kd;
+  Wire.begin(); /////////////TO BEGIN I2C COMMUNICATIONS///////////////
+  Wire.beginTransmission(0x68);
+  Wire.write(0x6B);
+  Wire.write(0);
+  Wire.endTransmission(true);
+  /*****Setup Pin Modes*****/
+  pinMode(motor2pin1,OUTPUT);
+  pinMode(motor1pin1,OUTPUT);
+  pinMode(motor2pin2,OUTPUT);
+  pinMode(motor1pin2,OUTPUT);
+  Serial.begin(9600);
+  time = millis(); ///////////////STARTS COUNTING TIME IN MILLISECONDS/////////////
 }
-
-/****Left Motor Functions****/
-void leftMotorBackward(int lbval) {
-  digitalWrite(motor1pin1, HIGH);
-  digitalWrite(motor1pin2, LOW);
-  analogWrite(ENAleft, lbval);
-}
-void leftMotorForward(int lfval) {
-  digitalWrite(motor1pin1, LOW);
-  digitalWrite(motor1pin2, HIGH);
-  analogWrite(ENAleft, lfval);
-}
-void leftMotorOff() {
-  digitalWrite(motor1pin1, LOW);
-  digitalWrite(motor1pin2, LOW);
-  analogWrite(ENAleft, 0);
-}
-
-/****Right Motor Functions****/
-void rightMotorBackward(int rbval) {
-  digitalWrite(motor2pin1, HIGH);
-  digitalWrite(motor2pin2, LOW);
-  analogWrite(ENAright, rbval);
-}
-void rightMotorForward(int rfval) {
-  digitalWrite(motor2pin1, LOW);
-  digitalWrite(motor2pin2, HIGH);
-  analogWrite(ENAright, rfval);
-}
-void rightMotorOff() {
-  digitalWrite(motor2pin1, LOW);
-  digitalWrite(motor2pin2, LOW);
-  analogWrite(ENAright, 0);
-}
-
-/****Steering****/
-void turnLeft(int tlval) {
-  digitalWrite(motor1pin1, LOW);
-  digitalWrite(motor1pin2, HIGH);
-  digitalWrite(motor2pin1, HIGH);
-  digitalWrite(motor2pin2, LOW);
-  analogWrite(ENAleft, tlval);
-  analogWrite(ENAright, tlval);
-}
-void turnRight(int trval) {
-  digitalWrite(motor1pin1, HIGH);
-  digitalWrite(motor1pin2, LOW);
-  digitalWrite(motor2pin1, LOW);
-  digitalWrite(motor2pin2, HIGH);
-  analogWrite(ENAleft, trval);
-  analogWrite(ENAright, trval); 
-}
-
-double Kp = 2, Ki = 5, Kd = 1;
-PID_v2 myPID(Kp, Ki, Kd, PID::Direct);
-
-void setup() {
-  //put your setup code here, to run once:
-  Serial.begin(115200); //setup for receiver
-
-  //set pins as input
-  pinMode(chA, INPUT);
-  pinMode(chB, INPUT);
-
-  // Initialize MPU6050
-  while(!mpu.begin(MPU6050_SCALE_2000DPS, MPU6050_RANGE_2G))
-  {
-    Serial.println("Could not find a valid MPU6050 sensor, check wiring!");
-    delay(500);
-  }
-  
-  // Calibrate gyroscope. The calibration must be at rest.
-  // If you don't want calibrate, comment this line.
-  mpu.calibrateGyro();
-
-  // Set threshold sensivty. Default 3.
-  // If you don't want use threshold, comment this line or set 0.
-  mpu.setThreshold(3);
-
-  // load and configure the DMP
-  devStatus = mpu.dmpInitialize();
+void loop() 
+{
+  /*////////////////////////WARNING//////////////////////
+   * DO NOT USE ANY DELAYS INSIDE THE LOOP OTHERWISE THE BOT WON'T BE 
+   * ABLE TO CORRECT THE BALANCE FAST ENOUGH
+   * ALSO, DONT USE ANY SERIAL PRINTS. BASICALLY DONT SLOW DOWN THE LOOP SPEED.
+  */
+    timePrev = time;  
+    time = millis();  
+    elapsedTime = (time - timePrev) / 1000; 
+    Wire.beginTransmission(0x68);
+    Wire.write(0x3B); 
+    Wire.endTransmission(false);
+    Wire.requestFrom(0x68,6,true);
     
-  myPID.Start(analogRead(PIN_INPUT),  // input
-              0,                      // current output
-              100);                   // setpoint
-
+    //PULLING RAW ACCELEROMETER DATA FROM IMU
+    Acc_rawX=Wire.read()<<8|Wire.read(); 
+    Acc_rawY=Wire.read()<<8|Wire.read();
+    Acc_rawZ=Wire.read()<<8|Wire.read(); 
+    
+    //CONVERTING RAW DATA TO ANGLES
+    Acceleration_angle[0] = atan((Acc_rawY/16384.0)/sqrt(pow((Acc_rawX/16384.0),2) + pow((Acc_rawZ/16384.0),2)))*rad_to_deg;
+    Acceleration_angle[1] = atan(-1*(Acc_rawX/16384.0)/sqrt(pow((Acc_rawY/16384.0),2) + pow((Acc_rawZ/16384.0),2)))*rad_to_deg;
+    Wire.beginTransmission(0x68);
+    Wire.write(0x43); 
+    Wire.endTransmission(false);
+    Wire.requestFrom(0x68,4,true); 
+    
+    //PULLING RAW GYRO DATA FROM IMU
+    Gyr_rawX=Wire.read()<<8|Wire.read(); 
+    Gyr_rawY=Wire.read()<<8|Wire.read(); 
+    
+    //CONVERTING RAW DATA TO ANGLES
+    Gyro_angle[0] = Gyr_rawX/131.0; 
+    Gyro_angle[1] = Gyr_rawY/131.0;
+    
+    //COMBINING BOTH ANGLES USING COMPLIMENTARY FILTER
+    Total_angle[0] = 0.98 *(Total_angle[0] + Gyro_angle[0]*elapsedTime) + 0.02*Acceleration_angle[0];
+    Total_angle[1] = 0.98 *(Total_angle[1] + Gyro_angle[1]*elapsedTime) + 0.02*Acceleration_angle[1];
+    
+    //TOTAL_ANGLE[0] IS THE PITCH ANGLE WHICH WE NEED
+    error = Total_angle[0] - desired_angle; //ERROR CALCULATION
+    
+    //PROPORTIONAL ERROR
+    pid_p = kp*error;
+    
+    //INTERGRAL ERROR
+    pid_i = pid_i+(ki*error);
+     
+    //DIFFERENTIAL ERROR
+    pid_d = kd*((error - previous_error)/elapsedTime);
+    
+    //TOTAL PID VALUE
+    PID = pid_p + pid_d;
+    
+    //UPDATING THE ERROR VALUE
+    previous_error = error;
+    //Serial.println(PID);                     //UNCOMMENT FOR DEBUGGING
+    //delay(60);                               //UNCOMMENT FOR DEBUGGING
+    //Serial.println(Total_angle[0]);          //UNCOMMENT FOR DEBUGGING
+    
+    //CONVERTING PID VALUES TO ABSOLUTE VALUES
+    mspeed = abs(PID);
+    //Serial.println(mspeed);                  //UNCOMMENT FOR DEBUGGING
+    
+    //
+    if(Total_angle[0]<0)
+      {
+       ccw();
+      }
+    if(Total_angle[0]>0)
+      {
+       cw();
+      }
+    if(Total_angle[0]>80)
+    motorOff();
+    if(Total_angle[0]<-80)
+    motorOff();
+    
+}
+//////////////MOVEMENT FUNCTION///////////////////
+void cw(){
+  digitalWrite(motor2pin1,HIGH);
+  digitalWrite(motor2pin2,LOW);
+  digitalWrite(motor1pin1,LOW);
+  digitalWrite(motor1pin2,HIGH); 
+  analogWrite(ENAleft,mspeed);
+  analogWrite(ENAright,mspeed);
+}
+void ccw(){
+  digitalWrite(motor2pin1,LOW);
+  digitalWrite(motor2pin2,HIGH);
+  digitalWrite(motor1pin1,HIGH);
+  digitalWrite(motor1pin2,LOW); 
+  analogWrite(ENAleft,mspeed);
+  analogWrite(ENAright,mspeed);
+}
+void motorOff(){
+  digitalWrite(motor2pin1,LOW);
+  digitalWrite(motor2pin2,LOW);
+  digitalWrite(motor1pin1,LOW);
+  digitalWrite(motor1pin2,LOW); 
+  analogWrite(ENAleft,mspeed);
+  analogWrite(ENAright,mspeed); 
 }
 
-void loop() {
-  // put your main code here, to run repeatedly:
-  timer = millis();
-  
-  ch1 = pulseIn(chA, HIGH, 25000); //steer
-  ch2 = pulseIn(chB, HIGH, 25000); //throttle
- 
-  // Read normalized values
-  Vector norm = mpu.readNormalizeGyro();
-
-  // Calculate Pitch, Roll and Yaw
-  pitch = pitch + norm.YAxis * timeStep;
-  roll = roll + norm.XAxis * timeStep;
-  yaw = yaw + norm.ZAxis * timeStep;
-
-
-  /****************PRINT DATA****************/
-  /*Print Receiver Information
-  Serial.print("| ch1:"); //Prints channel readings on Serial Monitor
-  Serial.print(ch1);
-  Serial.print("  |  ");
-  Serial.print("ch2 (throttling): "); //Prints channel readings on Serial Monitor
-  Serial.print(ch2);
-  Serial.println();*/
-  //Output 
-  Serial.print(" | Pitch = ");
-  Serial.print(pitch);
-  Serial.print(" | Roll = ");
-  Serial.print(roll);  
-  Serial.print(" | Yaw = ");
-  Serial.println(yaw);
-
-  
-  balancing(ch2);
-  // Wait to full timeStep period
-  delay((timeStep*1000) - (millis() - timer));
-}
+       

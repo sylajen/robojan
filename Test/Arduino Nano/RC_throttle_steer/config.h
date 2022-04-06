@@ -1,20 +1,20 @@
 /**PIN INITIALIZATION**/
 //Receiver
-const int chA = 5; //channel 1 pin STEERING
-const int chB = 6; //channel 2 pin THROTTLING
+const int chA = 2; //channel 1 pin STEERING
+const int chB = 3; //channel 2 pin THROTTLING
 
 //Left motor
-const int motor1pin1 = 12; // N1 on LEFT motor controller
-const int motor1pin2 = 13; // N2 on LEFT motor controller
-const int ENAleft = 11; // PWM for LEFT motor
+const int motor1pin1 = 7; // N1 on LEFT motor controller
+const int motor1pin2 = 8; // N2 on LEFT motor controller
+const int ENAleft = 9; // PWM for LEFT motor
 
 //Right motor
-const int motor2pin1 = 7; // N1 on RIGHT motor controller
-const int motor2pin2 = 8; // N2 on RIGHT motor controller
-const int ENAright = 9; // PWM for RIGHT motor
+const int motor2pin1 = 12; // N1 on RIGHT motor controller
+const int motor2pin2 = 13; // N2 on RIGHT motor controller
+const int ENAright = 11; // PWM for RIGHT motor
 
 //MOTOR CONTROLLER
-const int motorShield = 2; //
+const int motorShield = 4; //
 
 //Input from receiver and output to motors
 int ch1; //STEERING (900 - 2000 VALUE)

@@ -1,4 +1,4 @@
-/********PIN INITIALIZATION********/
+/**PIN INITIALIZATION**/
 //Receiver
 const int chA = 5; //channel 1 pin STEERING
 const int chB = 6; //channel 2 pin THROTTLING
@@ -13,33 +13,26 @@ const int motor2pin1 = 7; // N1 on RIGHT motor controller
 const int motor2pin2 = 8; // N2 on RIGHT motor controller
 const int ENAright = 9; // PWM for RIGHT motor
 
-//IMU
-const int scl = A5;
-const int sda = A4;
-const int intPin = 3;
+/******************PID******************/
+int mspeed = 10;
+int turnspeed = 50;
+int16_t Acc_rawX, Acc_rawY, Acc_rawZ, Gyr_rawX, Gyr_rawY, Gyr_rawZ;
+float Acceleration_angle[2];
+float Gyro_angle[2];
+float Total_angle[2];
+float elapsedTime, time, timePrev;
+int i;
+float rad_to_deg = 180/3.141592654;
+float PID, pwmLeft, pwmRight, error, previous_error;
+float pid_p=0;
+float pid_i=0;
+float pid_d=0;
 
-
-/*************MPU6050*************/
-// Pitch, Roll and Yaw values
-float pitch = 0;
-float roll = 0;
-float yaw = 0;
-
-// Timers
-unsigned long timer = 0;
-float timeStep = 0.01;
-
-/***************PID CONTROL***************/
-double Setpoint= 176; //set the value when the bot is perpendicular to ground using serial monitor. 
-//Read the project documentation on circuitdigest.com to learn how to set these values
-double Kp = 21; //Set this first
-double Kd = 0.8; //Set this secound
-double Ki = 140; //Finally set this 
-
-unsigned long lastTime;
-double Input, Output;
-double errSum, lastErr;
-double kp, ki, kd;
+//PID CONSTANTS
+float kp = 120;
+float kd = 200;
+float ki = 75;
+float desired_angle = 0;
 
 //Input from receiver and output to motors
 int ch1; //STEERING (900 - 2000 VALUE)
@@ -47,7 +40,7 @@ int ch2; //THROTTLING (900 - 2000 VALUE)
 int strPWM = 0; //0-255 VALUE
 int thrPWM = 0; //0-255 VALUE
 
-/***********BOUNDARIES***********/
+/**BOUNDARIES**/
 //Receiver channel inputs
 const int thrMaxForward = 2100;
 const int thrMinForward = 1550;
@@ -61,4 +54,4 @@ const int strMinRight = 1350;
 
 //Boundaries for PWM outputs
 const int maxPWM = 255;
-const int minPWM = 75;
+const int minPWM = 75; //75 instead of 0 because of deadband
